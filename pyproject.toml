@@ -10,11 +10,12 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = "^3.11"
 click = "^8.1.6"
-hpo-toolkit = "^0.2.0"
-pyphetools = "^0.4.8"
+hpo-toolkit = "^0.6.0"
+fhirclient = "^4.3.1"
+phenopackets = "^2.0.2.post4"
 
 [tool.poetry.group.test.dependencies]
-pytest = "^7.4.0"
+pytest = "^8.4.0"
 
 [build-system]
 requires = ["poetry-core"]

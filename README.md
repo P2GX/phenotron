@@ -5,7 +5,7 @@
 [//]: # (![PyPi downloads]&#40;https://img.shields.io/pypi/dm/hpo-toolkit.svg?label=Pypi%20downloads&#41;)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/phenotron)
 
-A library and cli for working transforming anything to Phenopackets
+A library and cli for connecting to a FHIR API via SMART and transforming data to Phenopackets
 
 ## Install
 
