@@ -1,7 +1,7 @@
 from fhirclient.models.patient import Patient
-from phenopackets import Individual, OntologyClass
+from phenopackets import Individual, OntologyClass, VitalStatus
 from google.protobuf.timestamp_pb2 import Timestamp
-import datetime
+from datetime import datetime
 import logging
 
 
@@ -16,9 +16,10 @@ class FhirPatient:
         sex_map = {"male": "MALE", "female": "FEMALE", "other": "OTHER_SEX", "unknown": "UNKNOWN_SEX"}
         kwargs["sex"] = sex_map.get(patient.gender if patient.gender else "unknown", "UNKNOWN_SEX")
         kwargs["taxonomy"] = OntologyClass(id="NCBITaxon:9606", label="Homo sapiens")
-        if patient.birthDate:
+        kwargs["vital_status"] = VitalStatus(status="DECEASED") if patient.deceasedBoolean else VitalStatus(status="ALIVE")
+        if patient.birthDate is not None:
             try:
-                dt = datetime.datetime.fromisoformat(patient.birthDate)
+                dt = datetime.strptime(str(patient.birthDate), "%Y-%m-%d")
                 ts = Timestamp()
                 ts.FromDatetime(dt)
                 kwargs["date_of_birth"] = ts
