@@ -134,3 +134,7 @@ dmypy.json
 
 # Phenopackets
 phenopackets/
+
+# OS / editor
+.DS_Store
+.vscode/

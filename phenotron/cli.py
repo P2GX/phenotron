@@ -4,8 +4,10 @@ import webbrowser
 import json
 from fhirclient import client
 from fhirclient.models.patient import Patient
+from fhirclient.models.condition import Condition
 from .fhir import FhirConverter, TerminologyMapper
-from phenopackets import Phenopacket
+from phenopackets import Phenopacket, PhenotypicFeature, Disease
+from google.protobuf.json_format import MessageToJson
 
 @click.group()
 def cli():
@@ -18,12 +20,10 @@ def transform(settings, patient_id):
     """
     Transforms a FHIR Patient resource into a Phenopacket using SMART on FHIR.
 
-    Args:
-        settings (str): Path to SMART app settings JSON file. If not provided, default settings are used.
-        patient_id (str): FHIR Patient resource ID to fetch and convert.
+    Without --settings, connects to the public HAPI FHIR R4 test server.
 
-    This command fetches a FHIR Patient resource using the provided settings and patient ID,
-    converts it to a Phenopacket, and outputs the subject's date of birth.
+    Fetches the Patient and their Conditions, maps them to a Phenopacket, and prints
+    the Phenopacket as JSON to stdout.
     """
     setup_logging()
     if settings:
@@ -52,9 +52,21 @@ def transform(settings, patient_id):
         logging.info("SMART client prepared successfully.")
     fc = FhirConverter(TerminologyMapper())
     logging.info(f"Fetching Patient - {patient_id}")
-    phenopacket: Phenopacket = fc.convert_patient(Patient.read(patient_id, smart.server))
-    logging.info(phenopacket)
-    pass
+    individual =  fc.convert_patient(Patient.read(patient_id, smart.server))
+    logging.info(f"Mapped Individual - {individual.id}")
+    
+    search = Condition.where(struct={'patient': f'Patient/{patient_id}'})
+    conditions = search.perform_resources(smart.server)
+    features = fc.convert_conditions(
+        [Condition(r.as_json()) for r in conditions]
+    )
+    phenotypes = [f for f in features if isinstance(f, PhenotypicFeature)]
+    diseases = [f for f in features if isinstance(f, Disease)]
+    logging.info(f"Found {len(phenotypes)} phenotypic features and {len(diseases)} diseases.")
+    phenopacket = Phenopacket(
+        id=individual.id, subject=individual, phenotypic_features=phenotypes, diseases=diseases
+    )
+    click.echo(MessageToJson(phenopacket))
 
 def setup_logging():
     level = logging.INFO

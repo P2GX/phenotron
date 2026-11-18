@@ -45,4 +45,11 @@ class TerminologyMapper:
             hpo_id, label = self.loinc_to_hpo_map[loinc_code]
             return OntologyClass(id=hpo_id, label=label)
         return None
-
+    
+    def is_disease_system(self, system: str) -> bool:
+        """Checks if the system is a known disease coding system."""
+        return system in ["http://snomed.info/sct", "http://purl.obolibrary.org/obo/mondo.owl"]
+    
+    def is_phenotype_system(self, system: str) -> bool:
+        """Checks if the system is a known phenotype coding system."""
+        return system in ["http://purl.obolibrary.org/obo/hp.owl", "http://snomed.info/sct"]

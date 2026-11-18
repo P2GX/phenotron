@@ -1,4 +1,5 @@
 from fhirclient.models.patient import Patient
+from fhirclient.models.fhirdate import FHIRDate
 from phenopackets import Individual, OntologyClass, VitalStatus
 from google.protobuf.timestamp_pb2 import Timestamp
 from datetime import datetime, timezone, date
@@ -19,7 +20,10 @@ class FhirPatient:
         kwargs["vital_status"] = VitalStatus(status="DECEASED") if patient.deceasedBoolean else VitalStatus(status="ALIVE")
         if patient.birthDate is not None:
             try:
-                dt = patient.birthDate.date
+                birth_date = patient.birthDate
+                if isinstance(birth_date, str):
+                    birth_date = FHIRDate(birth_date)
+                dt = birth_date.date
                 ts = Timestamp()
                 
                 if isinstance(dt, date) and not isinstance(dt, datetime):
@@ -31,5 +35,5 @@ class FhirPatient:
                 ts.FromDatetime(dt)
                 kwargs["date_of_birth"] = ts
             except Exception as e:
-                logging.warning(f"Could not parse birthDate '{patient.birthDate.date}': {e}")
+                logging.warning(f"Could not parse birthDate '{patient.birthDate}': {e}")
         return Individual(**kwargs)

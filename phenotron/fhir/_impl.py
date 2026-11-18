@@ -1,11 +1,13 @@
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, List
 from phenopackets import Phenopacket, PhenotypicFeature, Disease, MetaData, Resource, OntologyClass
+
 from phenopackets.schema.v2.core.individual_pb2 import Individual
 from fhirclient.models.patient import Patient
+from fhirclient.models.condition import Condition
 from .terminology import TerminologyMapper
 from .observation import ObservationInterpreter
-import datetime
 from ._patient import FhirPatient
+from ._condition import ConditionInterpreter
 
 class FhirConverter:
     """
@@ -14,16 +16,28 @@ class FhirConverter:
 
     def __init__(self, terminology_mapper: TerminologyMapper):
         self.terminology_mapper = terminology_mapper
-        self.interpreter = ObservationInterpreter(terminology_mapper)
+        self.observation_interpreter = ObservationInterpreter(terminology_mapper)
+        self.condition_interpreter = ConditionInterpreter(terminology_mapper)
 
-    def convert_patient(self, patient: Patient):
+    def convert_patient(self, patient: Patient) -> Individual:
         """
         Extracts patient data from the source.
         """
+        individual = FhirPatient.to_individual(patient)
+        return individual
 
-        subject = FhirPatient.to_individual(patient)
-        # map observations
-        return Phenopacket(id=subject.id, subject=subject, phenotypic_features=[])
+    def convert_conditions(self, conditions: List[Condition]) -> List[PhenotypicFeature | Disease | None]:
+        """
+        Converts a FHIR Condition resource to a PhenotypicFeature or Disease.
+        """
+        features = []
+        for condition in conditions:
+            if not condition or not condition.code or not condition.code.coding:
+                continue
+            # Use the ConditionInterpreter to handle the conversion logic
+            interpreted = self.condition_interpreter.interpret(condition)
+            features.append(interpreted)
+        return features
 
     # def convert_all_patients(self, fhir_bundle: Dict[str, Any]) -> Phenopacket:
     #     """
